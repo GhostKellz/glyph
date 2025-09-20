@@ -2,5 +2,53 @@
 name = "glyph"
 version = "0.1.0"
 edition = "2024"
+description = "Enterprise-grade Rust library for Model Context Protocol (MCP)"
+license = "MIT"
+repository = "https://github.com/ghostkellz/glyph"
+
+[lib]
+name = "glyph"
+path = "src/lib.rs"
+
+[[bin]]
+name = "glyph"
+path = "src/main.rs"
 
 [dependencies]
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+async-trait = "0.1"
+futures = "0.3"
+tokio-tungstenite = { version = "0.24", features = ["native-tls"], optional = true }
+url = "2.5"
+http = "1.0"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["trace"] }
+hyper = { version = "1.0", features = ["full"] }
+axum = { version = "0.7", features = ["ws", "macros"] }
+
+[features]
+default = ["client", "server", "websocket"]
+client = []
+server = []
+websocket = ["tokio-tungstenite"]
+http2 = []
+ffi = []
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3.0"
+
+[[example]]
+name = "client_example"
+path = "examples/client_example.rs"
+
+[[example]]
+name = "server_example"
+path = "examples/server_example.rs"
