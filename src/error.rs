@@ -23,6 +23,9 @@ pub enum Error {
     #[error("Tool not found: {name}")]
     ToolNotFound { name: String },
 
+    #[error("Tool execution failed: {0}")]
+    ToolExecution(String),
+
     #[error("Resource not found: {uri}")]
     ResourceNotFound { uri: String },
 

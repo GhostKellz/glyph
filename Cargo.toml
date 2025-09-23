@@ -41,6 +41,10 @@ tower-http = { version = "0.6", features = ["trace"] }
 hyper = { version = "1.0", features = ["full"] }
 axum = { version = "0.7", features = ["ws", "macros"] }
 
+# FFI support for Rune integration
+libc = "0.2"
+anyhow = "1.0"
+
 [features]
 default = ["client", "server", "websocket", "http"]
 client = []
