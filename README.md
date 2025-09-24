@@ -15,6 +15,12 @@
   ![FFI Ready](https://img.shields.io/badge/Interop-FFI%20Ready-lightgrey)
 </div>
 
+## DISCLAIMER
+
+⚠️ **EXPERIMENTAL LIBRARY - FOR LAB/PERSONAL USE** ⚠️
+
+This is an experimental library under active development. It is intended for research, learning, and personal projects. The API is subject to change!
+
 **Glyph** is the Rust backbone for MCP in your stack—**server + client + transports + schemas**—built for high throughput and deep observability. Ideal for **GhostLLM**, **GhostFlow**, **Jarvis**, and service backends.
 
 - 🧠 **Full MCP stack**: types, JSON-RPC, capabilities, sessions
