@@ -1,18 +1,17 @@
 use crate::protocol::{
-    GlyphError, Result, JsonRpcMessage, JsonRpcRequest, JsonRpcResponse, JsonRpcNotification,
-    McpError, RequestId, Implementation, ServerCapabilities, InitializeRequest, InitializeResult,
+    JsonRpcMessage, JsonRpcRequest, JsonRpcResponse, JsonRpcNotification,
+    McpError, Implementation, ServerCapabilities, InitializeRequest, InitializeResult,
     ProtocolVersion,
 };
+use crate::Result;
 use crate::transport::{Transport, TransportServer};
 use crate::server::{
     ServerBuilder, RequestHandler, SessionManager, ToolRegistry, ResourceRegistry, PromptRegistry,
 };
-use async_trait::async_trait;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, error, info, warn};
 
-#[derive(Debug)]
 pub struct Server {
     capabilities: ServerCapabilities,
     server_info: Implementation,
@@ -224,7 +223,7 @@ impl Server {
             &ProtocolVersion::LATEST,
         );
 
-        let negotiated_version = match negotiated_version {
+        let _negotiated_version = match negotiated_version {
             Some(version) => version,
             None => {
                 let error = McpError::new(
@@ -254,12 +253,12 @@ impl Server {
         self.initialized.store(true, std::sync::atomic::Ordering::SeqCst);
 
         // Send initialize result
-        let result = InitializeResult {
-            protocol_version: negotiated_version,
+        let result = serde_json::to_value(InitializeResult {
+            protocol_version: ProtocolVersion::LATEST,
             capabilities: self.capabilities.clone(),
             server_info: self.server_info.clone(),
             instructions: None,
-        };
+        })?;
 
         let response = JsonRpcResponse::success(id, result);
         transport.send(JsonRpcMessage::Response(response)).await?;
@@ -307,12 +306,12 @@ impl Server {
         registry.register(Box::new(provider)).await
     }
 
-    pub async fn register_prompt<P>(&self, prompt: P) -> Result<()>
+    pub async fn register_prompt_provider<P>(&self, provider: P) -> Result<()>
     where
-        P: crate::server::PromptProvider + 'static,
+        P: crate::server::prompts::PromptProvider + 'static,
     {
         let mut registry = self.prompt_registry.write().await;
-        registry.register(Box::new(prompt)).await
+        registry.register(Box::new(provider)).await
     }
 
     pub async fn list_tools(&self) -> Result<Vec<crate::protocol::Tool>> {

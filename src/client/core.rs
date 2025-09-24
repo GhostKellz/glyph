@@ -1,12 +1,9 @@
 use crate::protocol::{
-    GlyphError, Result, JsonRpcMessage, JsonRpcRequest, JsonRpcResponse, JsonRpcNotification,
+    GlyphError, JsonRpcMessage, JsonRpcRequest, JsonRpcResponse, JsonRpcNotification,
     RequestId, Implementation, ClientCapabilities, ServerCapabilities, InitializeRequest,
-    InitializeResult, ProtocolVersion, CallToolRequest, CallToolResult, ReadResourceRequest,
-    ReadResourceResult, ListToolsRequest, ListToolsResult, ListResourcesRequest,
-    ListResourcesResult, ListPromptsRequest, ListPromptsResult, GetPromptRequest,
-    GetPromptResult, Tool, Resource, Prompt,
+    InitializeResult, ProtocolVersion,
 };
-use crate::transport::Transport;
+use crate::{Error, Result};
 use crate::client::{ClientBuilder, Connection, ToolClient, ResourceClient, PromptClient};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -139,8 +136,7 @@ impl Client {
             .map_err(|_| GlyphError::JsonRpc("Request cancelled".to_string()))??;
 
         // Deserialize response
-        serde_json::from_value(response_value)
-            .map_err(|e| GlyphError::Serialization(e))
+        Ok(serde_json::from_value::<R>(response_value)?)
     }
 
     pub async fn send_notification<T>(&self, method: &str, params: Option<T>) -> Result<()>
@@ -203,12 +199,12 @@ impl Client {
         };
 
         if let Some(waiter) = waiter {
-            let result = if let Some(error) = response.error {
-                Err(GlyphError::Mcp(error))
-            } else if let Some(result) = response.result {
+            let result: Result<serde_json::Value> = if let Some(result) = response.result {
                 Ok(result)
+            } else if let Some(error) = response.error {
+                Err(GlyphError::Mcp(error).into())
             } else {
-                Err(GlyphError::JsonRpc("Response missing result and error".to_string()))
+                Err(GlyphError::JsonRpc("Response missing result and error".to_string()).into())
             };
 
             let _ = waiter.send(result); // Ignore if receiver dropped
@@ -302,7 +298,7 @@ impl Drop for Client {
         // Cancel all pending requests
         if let Ok(mut pending) = self.pending_requests.try_write() {
             for (_, waiter) in pending.drain() {
-                let _ = waiter.send(Err(GlyphError::ConnectionClosed));
+                let _ = waiter.send(Err(Error::ConnectionClosed));
             }
         }
     }

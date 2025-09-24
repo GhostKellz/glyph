@@ -1,12 +1,13 @@
 use async_trait::async_trait;
-use crate::protocol::{JsonRpcMessage, GlyphError, Result};
+use crate::protocol::JsonRpcMessage;
+use crate::Error;
+use crate::Result;
 use crate::transport::{Transport, TransportServer, TransportConfig};
 use tokio_tungstenite::{
     accept_async, connect_async, tungstenite::Message, WebSocketStream, MaybeTlsStream,
 };
 use tokio::net::{TcpListener, TcpStream};
-use tokio_stream::StreamExt;
-use futures_util::{SinkExt, StreamExt as FuturesStreamExt};
+use futures_util::SinkExt;
 use std::sync::Arc;
 use url::Url;
 
@@ -24,10 +25,10 @@ impl WebSocketTransport {
 
     pub async fn connect_with_config(url: &str, config: TransportConfig) -> Result<Self> {
         let url = Url::parse(url)
-            .map_err(|e| GlyphError::Transport(format!("Invalid URL: {}", e)))?;
+            .map_err(|e| Error::Transport(format!("Invalid URL: {}", e)))?;
 
-        let (stream, _) = connect_async(url).await
-            .map_err(|e| GlyphError::Transport(format!("WebSocket connection failed: {}", e)))?;
+        let (stream, _) = connect_async(url.as_str()).await
+            .map_err(|e| Error::Transport(format!("WebSocket connection failed: {}", e)))?;
 
         Ok(Self {
             stream,
@@ -56,14 +57,14 @@ impl WebSocketTransport {
 impl Transport for WebSocketTransport {
     async fn send(&mut self, message: JsonRpcMessage) -> Result<()> {
         if self.is_closed() {
-            return Err(GlyphError::ConnectionClosed);
+            return Err(Error::ConnectionClosed);
         }
 
         let json = serde_json::to_string(&message)?;
 
         if let Some(max_size) = self.config.max_message_size {
             if json.len() > max_size {
-                return Err(GlyphError::Transport(format!(
+                return Err(Error::Transport(format!(
                     "Message too large: {} bytes, max: {} bytes",
                     json.len(),
                     max_size
@@ -76,28 +77,26 @@ impl Transport for WebSocketTransport {
         if let Some(timeout) = self.config.write_timeout {
             tokio::time::timeout(timeout, send_future)
                 .await
-                .map_err(|_| GlyphError::Timeout)?
-                .map_err(|e| GlyphError::Transport(format!("WebSocket send error: {}", e)))?;
+                .map_err(|_| Error::Timeout("Send timeout".to_string()))?
+                .map_err(|e| Error::Transport(format!("WebSocket send error: {}", e)))?;
         } else {
             send_future.await
-                .map_err(|e| GlyphError::Transport(format!("WebSocket send error: {}", e)))?;
+                .map_err(|e| Error::Transport(format!("WebSocket send error: {}", e)))?;
         }
 
         Ok(())
     }
 
     async fn receive(&mut self) -> Result<Option<JsonRpcMessage>> {
-        if self.is_closed() {
-            return Ok(None);
-        }
+        let timeout = self.config.read_timeout;
 
         let receive_future = async {
-            match self.stream.next().await {
+            match tokio_stream::StreamExt::next(&mut self.stream).await {
                 Some(Ok(msg)) => match msg {
                     Message::Text(text) => {
                         if let Some(max_size) = self.config.max_message_size {
                             if text.len() > max_size {
-                                return Err(GlyphError::Transport(format!(
+                                return Err(Error::Transport(format!(
                                     "Message too large: {} bytes, max: {} bytes",
                                     text.len(),
                                     max_size
@@ -109,45 +108,33 @@ impl Transport for WebSocketTransport {
                         Ok(Some(message))
                     }
                     Message::Binary(data) => {
-                        if let Some(max_size) = self.config.max_message_size {
-                            if data.len() > max_size {
-                                return Err(GlyphError::Transport(format!(
-                                    "Message too large: {} bytes, max: {} bytes",
-                                    data.len(),
-                                    max_size
-                                )));
-                            }
-                        }
-
+                        // Try to parse as JSON-RPC message
                         let text = String::from_utf8(data)
-                            .map_err(|e| GlyphError::Transport(format!("Invalid UTF-8: {}", e)))?;
+                            .map_err(|e| Error::Transport(format!("Invalid UTF-8 in binary message: {}", e)))?;
                         let message: JsonRpcMessage = serde_json::from_str(&text)?;
                         Ok(Some(message))
+                    }
+                    Message::Ping(data) => {
+                        // Send pong
+                        if let Err(e) = self.stream.send(Message::Pong(data)).await {
+                            tracing::warn!("Failed to send pong: {}", e);
+                        }
+                        // Continue receiving
+                        self.receive().await
+                    }
+                    Message::Pong(_) => {
+                        // Ignore pongs
+                        self.receive().await
                     }
                     Message::Close(_) => {
                         self.closed.store(true, std::sync::atomic::Ordering::SeqCst);
                         Ok(None)
                     }
-                    Message::Ping(data) => {
-                        // Respond to ping with pong
-                        self.stream.send(Message::Pong(data)).await
-                            .map_err(|e| GlyphError::Transport(format!("Pong send error: {}", e)))?;
-                        // Continue listening for the next message
-                        self.receive().await
-                    }
-                    Message::Pong(_) => {
-                        // Ignore pong messages and continue listening
-                        self.receive().await
-                    }
                     Message::Frame(_) => {
-                        // Raw frames should not be encountered in high-level API
-                        self.receive().await
+                        Err(Error::Transport("Unexpected frame message".to_string()))
                     }
                 },
-                Some(Err(e)) => {
-                    self.closed.store(true, std::sync::atomic::Ordering::SeqCst);
-                    Err(GlyphError::Transport(format!("WebSocket error: {}", e)))
-                }
+                Some(Err(e)) => Err(Error::Transport(format!("WebSocket receive error: {}", e))),
                 None => {
                     self.closed.store(true, std::sync::atomic::Ordering::SeqCst);
                     Ok(None)
@@ -155,10 +142,10 @@ impl Transport for WebSocketTransport {
             }
         };
 
-        if let Some(timeout) = self.config.read_timeout {
+        if let Some(timeout) = timeout {
             tokio::time::timeout(timeout, receive_future)
                 .await
-                .map_err(|_| GlyphError::Timeout)?
+                .map_err(|_| Error::Timeout("Receive timeout".to_string()))?
         } else {
             receive_future.await
         }
@@ -168,7 +155,7 @@ impl Transport for WebSocketTransport {
         self.closed.store(true, std::sync::atomic::Ordering::SeqCst);
 
         self.stream.close(None).await
-            .map_err(|e| GlyphError::Transport(format!("WebSocket close error: {}", e)))?;
+            .map_err(|e| Error::Transport(format!("WebSocket close error: {}", e)))?;
 
         Ok(())
     }
@@ -191,14 +178,14 @@ impl WebSocketServer {
 
     pub async fn bind_with_config(addr: &str, config: TransportConfig) -> Result<Self> {
         let listener = TcpListener::bind(addr).await
-            .map_err(|e| GlyphError::Transport(format!("Failed to bind to {}: {}", addr, e)))?;
+            .map_err(|e| Error::Transport(format!("Failed to bind to {}: {}", addr, e)))?;
 
         Ok(Self { listener, config })
     }
 
     pub fn local_addr(&self) -> Result<std::net::SocketAddr> {
         self.listener.local_addr()
-            .map_err(|e| GlyphError::Transport(format!("Failed to get local address: {}", e)))
+            .map_err(|e| Error::Transport(format!("Failed to get local address: {}", e)))
     }
 }
 
@@ -208,14 +195,18 @@ impl TransportServer for WebSocketServer {
 
     async fn accept(&mut self) -> Result<Self::Connection> {
         let (stream, addr) = self.listener.accept().await
-            .map_err(|e| GlyphError::Transport(format!("Failed to accept connection: {}", e)))?;
+            .map_err(|e| Error::Transport(format!("Failed to accept connection: {}", e)))?;
 
         tracing::debug!("New WebSocket connection from {}", addr);
 
-        let ws_stream = accept_async(stream).await
-            .map_err(|e| GlyphError::Transport(format!("WebSocket handshake failed: {}", e)))?;
+        let maybe_tls_stream = MaybeTlsStream::Plain(stream);
+        let ws_stream = accept_async(maybe_tls_stream).await
+            .map_err(|e| Error::Transport(format!("WebSocket handshake failed: {}", e)))?;
 
-        Ok(WebSocketTransport::from_stream_with_config(ws_stream, self.config.clone()))
+        Ok(WebSocketTransport::from_stream_with_config(
+            ws_stream,
+            self.config.clone()
+        ))
     }
 
     async fn close(&mut self) -> Result<()> {

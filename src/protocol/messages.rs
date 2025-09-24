@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use crate::protocol::{
-    ClientCapabilities, Content, Implementation, Prompt, PromptArgument, PromptMessage,
+    ClientCapabilities, Content, Implementation, Prompt, PromptMessage,
     Resource, ResourceTemplate, ServerCapabilities, Tool, ProtocolVersion,
 };
 use std::collections::HashMap;
@@ -34,7 +34,7 @@ pub struct PingRequest;
 pub struct PingResult;
 
 // Tool Messages
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ListToolsRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
@@ -48,7 +48,7 @@ pub struct ListToolsResult {
     pub next_cursor: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CallToolRequest {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -89,7 +89,7 @@ impl CallToolResult {
 }
 
 // Resource Messages
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ListResourcesRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,

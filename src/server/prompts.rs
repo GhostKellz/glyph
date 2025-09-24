@@ -18,7 +18,6 @@ pub trait PromptProvider: Send + Sync {
     async fn get_prompt(&self, arguments: HashMap<String, String>) -> Result<GetPromptResult>;
 }
 
-#[derive(Debug)]
 pub struct PromptRegistry {
     prompts: HashMap<String, Box<dyn PromptProvider>>,
 }
@@ -34,9 +33,7 @@ impl PromptRegistry {
         let name = prompt.name().to_string();
 
         if self.prompts.contains_key(&name) {
-            return Err(crate::protocol::GlyphError::JsonRpc(
-                format!("Prompt '{}' is already registered", name)
-            ));
+            return Err(crate::Error::protocol(format!("Prompt '{}' is already registered", name)));
         }
 
         self.prompts.insert(name, prompt);

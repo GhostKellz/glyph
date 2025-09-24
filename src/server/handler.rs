@@ -1,5 +1,5 @@
 use crate::protocol::{
-    JsonRpcRequest, McpError, McpResult, CallToolRequest, ReadResourceRequest,
+    JsonRpcRequest, McpError, CallToolRequest, ReadResourceRequest,
     ListToolsRequest, ListResourcesRequest, ListPromptsRequest, GetPromptRequest,
     SubscribeRequest, UnsubscribeRequest,
 };
@@ -8,9 +8,8 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use serde_json::Value;
 
-#[derive(Debug)]
 pub struct RequestHandler {
-    session_manager: Arc<RwLock<SessionManager>>,
+    _session_manager: Arc<RwLock<SessionManager>>,
     tool_registry: Arc<RwLock<ToolRegistry>>,
     resource_registry: Arc<RwLock<ResourceRegistry>>,
     prompt_registry: Arc<RwLock<PromptRegistry>>,
@@ -24,7 +23,7 @@ impl RequestHandler {
         prompt_registry: Arc<RwLock<PromptRegistry>>,
     ) -> Self {
         Self {
-            session_manager,
+            _session_manager: session_manager,
             tool_registry,
             resource_registry,
             prompt_registry,
@@ -50,7 +49,7 @@ impl RequestHandler {
     }
 
     async fn handle_list_tools(&self, request: JsonRpcRequest<Value>) -> Result<Value, McpError> {
-        let req: ListToolsRequest = self.parse_params(request.params)?;
+        let _req: ListToolsRequest = self.parse_params(request.params)?;
         let registry = self.tool_registry.read().await;
         let tools = registry.list_tools().await
             .map_err(|e| McpError::internal_error(format!("Failed to list tools: {}", e)))?;
@@ -74,7 +73,7 @@ impl RequestHandler {
     }
 
     async fn handle_list_resources(&self, request: JsonRpcRequest<Value>) -> Result<Value, McpError> {
-        let req: ListResourcesRequest = self.parse_params(request.params)?;
+        let _req: ListResourcesRequest = self.parse_params(request.params)?;
         let registry = self.resource_registry.read().await;
         let resources = registry.list_resources().await
             .map_err(|e| McpError::internal_error(format!("Failed to list resources: {}", e)))?;
@@ -127,7 +126,7 @@ impl RequestHandler {
     }
 
     async fn handle_list_prompts(&self, request: JsonRpcRequest<Value>) -> Result<Value, McpError> {
-        let req: ListPromptsRequest = self.parse_params(request.params)?;
+        let _req: ListPromptsRequest = self.parse_params(request.params)?;
         let registry = self.prompt_registry.read().await;
         let prompts = registry.list_prompts().await
             .map_err(|e| McpError::internal_error(format!("Failed to list prompts: {}", e)))?;
@@ -162,12 +161,13 @@ impl RequestHandler {
 
     fn parse_params<T>(&self, params: Option<Value>) -> Result<T, McpError>
     where
-        T: serde::de::DeserializeOwned + Default,
+        T: serde::de::DeserializeOwned,
     {
         match params {
             Some(value) => serde_json::from_value(value)
                 .map_err(|e| McpError::invalid_params(format!("Invalid parameters: {}", e))),
-            None => Ok(T::default()),
+            None => serde_json::from_value(Value::Null)
+                .map_err(|e| McpError::invalid_params(format!("Missing required parameters: {}", e))),
         }
     }
 }

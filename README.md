@@ -1,4 +1,3 @@
-
 # Glyph
 
 <div align="center">
@@ -82,6 +81,72 @@ async fn main() -> anyhow::Result<()> {
     srv.register(ReadFile);
     srv.run().await
 }
+```
+
+## Quick Start — Server Binary
+
+The Glyph MCP server binary provides a ready-to-use MCP server with built-in tools.
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/ghostkellz/glyph
+cd glyph
+
+# Build the server binary
+cargo build --release
+```
+
+### Running the Server
+
+```bash
+# Start WebSocket server (default)
+./target/release/glyph serve
+
+# Start stdio server
+./target/release/glyph serve --transport stdio
+
+# Custom address and port
+./target/release/glyph serve --address 0.0.0.0:8080
+
+# Enable verbose logging
+./target/release/glyph serve --verbose
+```
+
+### Available Tools
+
+The server comes with 7 built-in tools:
+
+- **echo**: Echo back input messages
+- **read_file**: Read file contents
+- **write_file**: Write content to files
+- **list_directory**: List directory contents
+- **delete_file**: Delete files or directories
+- **shell_execute**: Execute shell commands
+- **http_request**: Make HTTP requests to external APIs
+
+### Testing the Server
+
+```bash
+# Build and run the test client
+cargo build --example test_client
+./target/debug/examples/test_client
+```
+
+### Docker Deployment
+
+```dockerfile
+FROM rust:1.75-slim as builder
+WORKDIR /app
+COPY . .
+RUN cargo build --release
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /app/target/release/glyph /usr/local/bin/glyph
+EXPOSE 7331
+CMD ["glyph", "serve", "--address", "0.0.0.0:7331"]
 ```
 
 ## Features

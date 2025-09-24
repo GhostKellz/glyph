@@ -38,9 +38,6 @@ pub enum Error {
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
 
-    #[error("I/O error: {0}")]
-    Io(#[from] std::io::Error),
-
     #[error("WebSocket error: {0}")]
     WebSocket(String),
 
@@ -49,6 +46,15 @@ pub enum Error {
 
     #[error("Internal error: {0}")]
     Internal(String),
+
+    #[error("Connection closed")]
+    ConnectionClosed,
+
+    #[error("Timeout: {0}")]
+    Timeout(String),
+
+    #[error("I/O error: {0}")]
+    Io(#[from] std::io::Error),
 }
 
 impl Error {
@@ -78,5 +84,42 @@ impl Error {
 
     pub fn internal<T: fmt::Display>(msg: T) -> Self {
         Self::Internal(msg.to_string())
+    }
+}
+
+impl From<crate::protocol::error::GlyphError> for Error {
+    fn from(err: crate::protocol::error::GlyphError) -> Self {
+        match err {
+            crate::protocol::error::GlyphError::Mcp(mcp_err) => {
+                match mcp_err.code {
+                    crate::protocol::error::ErrorCode::Standard(code) => match code {
+                        crate::protocol::error::StandardErrorCode::ToolNotFound => {
+                            Error::ToolNotFound { name: mcp_err.message }
+                        }
+                        crate::protocol::error::StandardErrorCode::ToolExecutionError => {
+                            Error::ToolExecution(mcp_err.message)
+                        }
+                        crate::protocol::error::StandardErrorCode::ResourceNotFound => {
+                            Error::ResourceNotFound { uri: mcp_err.message }
+                        }
+                        _ => Error::Protocol(mcp_err.message),
+                    },
+                    _ => Error::Protocol(mcp_err.message),
+                }
+            }
+            crate::protocol::error::GlyphError::JsonRpc(msg) => Error::JsonRpc(msg),
+            crate::protocol::error::GlyphError::Transport(msg) => Error::Transport(msg),
+            crate::protocol::error::GlyphError::Serialization(err) => Error::Serialization(err),
+            crate::protocol::error::GlyphError::Io(err) => Error::Io(err),
+            crate::protocol::error::GlyphError::VersionMismatch { .. } => Error::Protocol(err.to_string()),
+            crate::protocol::error::GlyphError::ConnectionClosed => Error::ConnectionClosed,
+            crate::protocol::error::GlyphError::Timeout => Error::Timeout("Timeout".to_string()),
+        }
+    }
+}
+
+impl From<crate::protocol::error::McpError> for Error {
+    fn from(err: crate::protocol::error::McpError) -> Self {
+        crate::protocol::error::GlyphError::from(err).into()
     }
 }

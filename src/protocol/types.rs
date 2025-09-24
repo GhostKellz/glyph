@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum RequestId {
     Number(i64),
@@ -220,12 +220,6 @@ pub enum PromptRole {
     User,
     Assistant,
     System,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GetPromptResult {
-    pub description: Option<String>,
-    pub messages: Vec<PromptMessage>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,5 +1,5 @@
 use crate::protocol::{Implementation, ClientCapabilities};
-use crate::transport::{StdioTransport, WebSocketTransport, HttpTransport, TransportConfig};
+use crate::transport::{StdioTransport, WebSocketTransport, HttpTransport, TransportConfig, Transport};
 use crate::client::{Client, Connection};
 use crate::Result;
 
@@ -51,26 +51,32 @@ impl ClientBuilder {
     }
 
     pub async fn connect_stdio(self) -> Result<Client> {
+        let client_info = self.get_client_info();
+        let capabilities = self.capabilities;
         let transport = StdioTransport::with_config(self.transport_config);
         let connection = Connection::new(Box::new(transport));
-        let client = Client::new(connection, self.get_client_info(), self.capabilities);
+        let client = Client::new(connection, client_info, capabilities);
         client.initialize().await?;
         Ok(client)
     }
 
     pub async fn connect_websocket(self, url: &str) -> Result<Client> {
-        let transport = WebSocketTransport::connect_with_config(url, self.transport_config).await?;
+        let client_info = self.get_client_info();
+        let capabilities = self.capabilities;
+        let transport = WebSocketTransport::connect_with_config(url, self.transport_config.clone()).await?;
         let connection = Connection::new(Box::new(transport));
-        let client = Client::new(connection, self.get_client_info(), self.capabilities);
+        let client = Client::new(connection, client_info, capabilities);
         client.initialize().await?;
         Ok(client)
     }
 
     pub async fn connect_http(self, url: &str) -> Result<Client> {
-        let mut transport = HttpTransport::with_config(url, self.transport_config)?;
+        let client_info = self.get_client_info();
+        let capabilities = self.capabilities;
+        let mut transport = HttpTransport::with_config(url, self.transport_config.clone())?;
         transport.start_sse_listener().await?;
         let connection = Connection::new(Box::new(transport));
-        let client = Client::new(connection, self.get_client_info(), self.capabilities);
+        let client = Client::new(connection, client_info, capabilities);
         client.initialize().await?;
         Ok(client)
     }

@@ -1,6 +1,6 @@
-use crate::protocol::{JsonRpcMessage, GlyphError, Result};
+use crate::protocol::JsonRpcMessage;
+use crate::Result;
 use crate::transport::Transport;
-use async_trait::async_trait;
 use std::fmt::Debug;
 
 #[derive(Debug)]

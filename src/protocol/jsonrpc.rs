@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use crate::protocol::{RequestId, McpError};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct JsonRpcVersion2_0;
 
 impl JsonRpcVersion2_0 {
@@ -142,7 +142,7 @@ impl JsonRpcMessage {
                     params,
                 })
             }
-            _ => Err(serde_json::Error::custom("Not a request")),
+            _ => Err(serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "Not a request"))),
         }
     }
 
@@ -161,7 +161,7 @@ impl JsonRpcMessage {
                     params,
                 })
             }
-            _ => Err(serde_json::Error::custom("Not a notification")),
+            _ => Err(serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "Not a notification"))),
         }
     }
 
@@ -181,7 +181,7 @@ impl JsonRpcMessage {
                     error: resp.error.clone(),
                 })
             }
-            _ => Err(serde_json::Error::custom("Not a response")),
+            _ => Err(serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "Not a response"))),
         }
     }
 }

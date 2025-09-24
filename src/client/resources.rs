@@ -4,7 +4,7 @@ use crate::protocol::{
     RequestId,
 };
 use crate::client::{Connection, ResponseWaiter};
-use crate::{Result, JsonRpcMessage, JsonRpcRequest};
+use crate::{Result, protocol::{JsonRpcMessage, JsonRpcRequest}};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
@@ -57,7 +57,7 @@ impl ResourceClient {
 
         Err(crate::protocol::GlyphError::JsonRpc(
             "No text content found in resource".to_string()
-        ))
+        ).into())
     }
 
     pub async fn read_resource_bytes(&self, uri: impl Into<String>) -> Result<Vec<u8>> {
@@ -72,14 +72,14 @@ impl ResourceClient {
                     return base64::decode(&blob)
                         .map_err(|e| crate::protocol::GlyphError::JsonRpc(
                             format!("Failed to decode base64: {}", e)
-                        ));
+                        ).into());
                 }
             }
         }
 
         Err(crate::protocol::GlyphError::JsonRpc(
             "No content found in resource".to_string()
-        ))
+        ).into())
     }
 
     pub async fn subscribe(&self, uri: impl Into<String>) -> Result<()> {
@@ -129,8 +129,8 @@ impl ResourceClient {
             .map_err(|_| crate::protocol::GlyphError::JsonRpc("Request cancelled".to_string()))??;
 
         // Deserialize response
-        serde_json::from_value(response_value)
-            .map_err(|e| crate::protocol::GlyphError::Serialization(e))
+        serde_json::from_value::<R>(response_value)
+            .map_err(|e| crate::protocol::GlyphError::Serialization(e).into())
     }
 }
 

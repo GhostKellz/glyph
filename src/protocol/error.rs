@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use thiserror::Error;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, thiserror::Error)]
 pub struct McpError {
     pub code: ErrorCode,
     pub message: String,
@@ -183,4 +183,50 @@ pub enum GlyphError {
     Timeout,
 }
 
-pub type Result<T> = std::result::Result<T, GlyphError>;
+impl From<crate::Error> for GlyphError {
+    fn from(err: crate::Error) -> Self {
+        match err {
+            crate::Error::JsonRpc(msg) => GlyphError::JsonRpc(msg),
+            crate::Error::Protocol(msg) => GlyphError::JsonRpc(msg),
+            crate::Error::Transport(msg) => GlyphError::Transport(msg),
+            crate::Error::Auth(msg) => GlyphError::JsonRpc(format!("Authentication failed: {}", msg)),
+            crate::Error::Permission(msg) => GlyphError::JsonRpc(format!("Permission denied: {}", msg)),
+            crate::Error::ToolNotFound { name } => GlyphError::Mcp(McpError::tool_not_found(&name)),
+            crate::Error::ToolExecution(msg) => GlyphError::Mcp(McpError::tool_execution_error(msg)),
+            crate::Error::ResourceNotFound { uri } => GlyphError::Mcp(McpError::resource_not_found(&uri)),
+            crate::Error::InvalidRequest(msg) => GlyphError::Mcp(McpError::invalid_request(msg)),
+            crate::Error::Connection(msg) => GlyphError::Transport(msg),
+            crate::Error::Serialization(err) => GlyphError::Serialization(err),
+            crate::Error::Io(err) => GlyphError::Io(err),
+            crate::Error::WebSocket(msg) => GlyphError::Transport(msg),
+            crate::Error::Http(msg) => GlyphError::Transport(msg),
+            crate::Error::ConnectionClosed => GlyphError::ConnectionClosed,
+            crate::Error::Timeout(_) => GlyphError::Timeout,
+            crate::Error::Internal(msg) => GlyphError::Mcp(McpError::internal_error(msg)),
+        }
+    }
+}
+
+impl From<crate::Error> for McpError {
+    fn from(err: crate::Error) -> Self {
+        match err {
+            crate::Error::JsonRpc(msg) => McpError::invalid_request(msg),
+            crate::Error::Protocol(msg) => McpError::internal_error(msg),
+            crate::Error::Transport(msg) => McpError::internal_error(format!("Transport error: {}", msg)),
+            crate::Error::Auth(msg) => McpError::consent_required(format!("Authentication failed: {}", msg)),
+            crate::Error::Permission(msg) => McpError::consent_required(format!("Permission denied: {}", msg)),
+            crate::Error::ToolNotFound { name } => McpError::tool_not_found(&name),
+            crate::Error::ToolExecution(msg) => McpError::tool_execution_error(msg),
+            crate::Error::ResourceNotFound { uri } => McpError::resource_not_found(&uri),
+            crate::Error::InvalidRequest(msg) => McpError::invalid_request(msg),
+            crate::Error::Connection(msg) => McpError::internal_error(format!("Connection error: {}", msg)),
+            crate::Error::Serialization(err) => McpError::internal_error(format!("Serialization error: {}", err)),
+            crate::Error::Io(err) => McpError::internal_error(format!("IO error: {}", err)),
+            crate::Error::WebSocket(msg) => McpError::internal_error(format!("WebSocket error: {}", msg)),
+            crate::Error::Http(msg) => McpError::internal_error(format!("HTTP error: {}", msg)),
+            crate::Error::ConnectionClosed => McpError::internal_error("Connection closed".to_string()),
+            crate::Error::Timeout(msg) => McpError::internal_error(format!("Timeout: {}", msg)),
+            crate::Error::Internal(msg) => McpError::internal_error(msg),
+        }
+    }
+}

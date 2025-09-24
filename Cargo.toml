@@ -45,6 +45,12 @@ axum = { version = "0.7", features = ["ws", "macros"] }
 libc = "0.2"
 anyhow = "1.0"
 
+# Schema validation
+jsonschema = "0.18"
+
+# CLI parsing
+clap = { version = "4.0", features = ["derive"] }
+
 [features]
 default = ["client", "server", "websocket", "http"]
 client = []
@@ -65,3 +71,7 @@ path = "examples/client_example.rs"
 [[example]]
 name = "server_example"
 path = "examples/server_example.rs"
+
+[[example]]
+name = "test_client"
+path = "examples/test_client.rs"

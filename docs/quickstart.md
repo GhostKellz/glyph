@@ -1,285 +1,194 @@
 # Quick Start Guide
 
-Get up and running with Glyph in just a few minutes! This guide will walk you through creating your first MCP server and client.
+Get up and running with Glyph in just a few minutes! This guide covers both using the pre-built binary and building custom MCP servers.
 
-## Installation
+## Option 1: Using the Glyph Binary (Fastest)
 
-Add Glyph to your `Cargo.toml`:
+The Glyph binary comes with 7 built-in tools and is ready to use immediately.
+
+### Installation
+
+```bash
+# Install from crates.io (when published)
+cargo install glyph
+
+# Or build from source
+git clone https://github.com/ghostkellz/glyph
+cd glyph
+cargo build --release
+```
+
+### Start the Server
+
+```bash
+# Start WebSocket server (default)
+./target/release/glyph serve
+
+# Start with verbose logging
+./target/release/glyph serve --verbose
+
+# Custom address and port
+./target/release/glyph serve --address 0.0.0.0:8080
+
+# Use stdio transport
+./target/release/glyph serve --transport stdio
+```
+
+### Built-in Tools
+
+The binary includes 7 production-ready tools:
+
+- **echo**: Echo back input messages
+- **read_file**: Read file contents
+- **write_file**: Write content to files
+- **list_directory**: List directory contents
+- **delete_file**: Delete files or directories
+- **shell_execute**: Execute shell commands
+- **http_request**: Make HTTP requests to external APIs
+
+### Test the Server
+
+```bash
+# Build and run test client
+cargo run --example test_client
+```
+
+## Option 2: Building Custom Servers
+
+For custom MCP servers, use the Glyph library:
+
+### Installation
+
+Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-glyph = { git = "https://github.com/ghostkellz/glyph", tag = "v0.1.0" }
+glyph = { git = "https://github.com/ghostkellz/glyph", tag = "v0.1.0-rc.1" }
 tokio = { version = "1", features = ["full"] }
+serde_json = "1.0"
 ```
 
-## Your First MCP Server
-
-Let's create a simple file server that can read and write files:
+### Simple Server with Built-in Tools
 
 ```rust
-use glyph::{
-    Server, Tool, ToolInputSchema, CallToolResult, Content,
-    async_trait, Result, json,
-};
-use std::collections::HashMap;
+use glyph::server::ServerBuilder;
 
-// Define a tool for reading files
-struct ReadFileTool;
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize tracing
+    tracing_subscriber::fmt::init();
+
+    // Create server with WebSocket transport
+    let server = ServerBuilder::new()
+        .with_server_info("my-server", "1.0.0")
+        .build()
+        .await?;
+
+    // Server starts with built-in tools by default
+    server.run().await?;
+
+    Ok(())
+}
+```
+
+### Custom Tool Server
+
+```rust
+use glyph::server::{ServerBuilder, Tool, CallToolResult, Content};
+use glyph::protocol::ToolInputSchema;
+use async_trait::async_trait;
+use serde_json::json;
+
+// Define a custom tool
+struct HelloTool;
 
 #[async_trait]
-impl Tool for ReadFileTool {
+impl Tool for HelloTool {
     fn name(&self) -> &str {
-        "read_file"
+        "hello"
     }
 
     fn description(&self) -> Option<&str> {
-        Some("Read the contents of a file")
+        Some("Say hello to someone")
     }
 
     fn input_schema(&self) -> ToolInputSchema {
-        let mut properties = HashMap::new();
-        properties.insert(
-            "path".to_string(),
-            json!({
-                "type": "string",
-                "description": "The path to the file to read"
-            })
-        );
-
         ToolInputSchema::object()
-            .with_properties(properties)
-            .with_required(vec!["path".to_string()])
+            .with_property("name", json!({
+                "type": "string",
+                "description": "Name to greet"
+            }))
+            .with_required(vec!["name"])
     }
 
-    async fn call(&self, args: Option<serde_json::Value>) -> Result<CallToolResult> {
+    async fn call(&self, args: Option<serde_json::Value>) -> glyph::Result<CallToolResult> {
         let args = args.unwrap_or(json!({}));
-        let path = args["path"].as_str()
-            .ok_or_else(|| glyph::McpError::invalid_params("Missing 'path' parameter"))?;
+        let name = args["name"].as_str().unwrap_or("World");
 
-        match tokio::fs::read_to_string(path).await {
-            Ok(contents) => Ok(CallToolResult::success(vec![Content::text(contents)])),
-            Err(e) => Ok(CallToolResult::error(vec![Content::text(format!(
-                "Failed to read file: {}", e
-            ))])),
-        }
+        Ok(CallToolResult::success(vec![
+            Content::text(format!("Hello, {}!", name))
+        ]))
     }
 }
-
-#[tokio::main]
-async fn main() -> Result<()> {
-    // Initialize tracing
-    tracing_subscriber::init();
-
-    // Create server with stdio transport
-    let server = Server::builder()
-        .with_server_info("file-server", "1.0.0")
-        .with_tools()
-        .build();
-
-    // Register our tool
-    server.register_tool(ReadFileTool).await?;
-
-    // Run the server
-    server.builder().for_stdio().run().await
-}
-```
-
-## Your First MCP Client
-
-Now let's create a client that can call our file server:
-
-```rust
-use glyph::{Client, json};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Connect to the server via stdio
-    let client = Client::builder()
-        .with_client_info("file-client", "1.0.0")
-        .connect_stdio()
+    tracing_subscriber::fmt::init();
+
+    let mut server = ServerBuilder::new()
+        .with_server_info("hello-server", "1.0.0")
+        .build()
         .await?;
 
-    // List available tools
-    let tools = client.tools().list_tools(None).await?;
-    println!("Available tools: {:?}", tools.tools);
+    // Register custom tool
+    server.register_tool(HelloTool).await?;
 
-    // Call the read_file tool
-    let result = client.tools().call_tool(
-        "read_file",
-        Some(json!({ "path": "README.md" }))
-    ).await?;
-
-    // Print the result
-    for content in result.content {
-        if let glyph::Content::Text { text } = content {
-            println!("File contents:\n{}", text);
-        }
-    }
-
+    server.run().await?;
     Ok(())
 }
 ```
 
-## Running Your First Example
+## Testing Your Server
 
-1. **Save the server code** to `examples/file_server.rs`
-2. **Save the client code** to `examples/file_client.rs`
-3. **Add to Cargo.toml**:
-   ```toml
-   [[example]]
-   name = "file_server"
-   path = "examples/file_server.rs"
+### WebSocket Transport
 
-   [[example]]
-   name = "file_client"
-   path = "examples/file_client.rs"
-   ```
+```bash
+# Start your server
+cargo run
 
-4. **Run the server**:
-   ```bash
-   cargo run --example file_server
-   ```
+# In another terminal, test with curl (basic connectivity)
+curl -X GET http://127.0.0.1:7331/health  # If you add health endpoint
 
-5. **In another terminal, run the client**:
-   ```bash
-   echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"read_file","arguments":{"path":"README.md"}}}' | cargo run --example file_server
-   ```
-
-## WebSocket Example
-
-For real-time applications, use WebSocket transport:
-
-### Server
-```rust
-#[tokio::main]
-async fn main() -> Result<()> {
-    let server = Server::builder()
-        .with_tools()
-        .build();
-
-    server.register_tool(ReadFileTool).await?;
-
-    // Run WebSocket server on localhost:8080
-    server.builder()
-        .for_websocket("127.0.0.1:8080")
-        .await?
-        .run()
-        .await
-}
+# Use MCP client or test client
+cargo run --example test_client
 ```
 
-### Client
-```rust
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = Client::connect_websocket("ws://127.0.0.1:8080").await?;
+### Stdio Transport
 
-    let result = client.tools().call_tool(
-        "read_file",
-        Some(json!({ "path": "Cargo.toml" }))
-    ).await?;
-
-    println!("Result: {:?}", result);
-    Ok(())
-}
-```
-
-## Built-in Tools
-
-Glyph comes with several built-in tools:
-
-```rust
-use glyph::server::{EchoTool, ReadFileTool, WriteFileTool};
-
-let server = Server::builder()
-    .with_tools()
-    .build();
-
-// Register built-in tools
-server.register_tool(EchoTool).await?;
-server.register_tool(ReadFileTool).await?;
-server.register_tool(WriteFileTool).await?;
-```
-
-## Resource Example
-
-Expose files as resources:
-
-```rust
-use glyph::server::{FileSystemResourceProvider, ResourceProvider};
-
-let server = Server::builder()
-    .with_resources()
-    .build();
-
-// Expose current directory as resources
-let provider = FileSystemResourceProvider::new(".")
-    .with_allowed_extensions(vec!["txt".to_string(), "md".to_string()]);
-
-server.register_resource_provider(provider).await?;
-```
-
-## Client Resource Access
-
-```rust
-let client = Client::connect_stdio().await?;
-
-// List available resources
-let resources = client.resources().list_resources(None).await?;
-println!("Available resources: {:?}", resources.resources);
-
-// Read a specific resource
-let content = client.resources().read_resource_text("file://README.md").await?;
-println!("Resource content: {}", content);
-```
-
-## Error Handling
-
-Glyph provides comprehensive error types:
-
-```rust
-use glyph::{GlyphError, McpError};
-
-match client.tools().call_tool("nonexistent", None).await {
-    Ok(result) => println!("Success: {:?}", result),
-    Err(GlyphError::Mcp(McpError { code, message, .. })) => {
-        println!("MCP Error {}: {}", code, message);
-    }
-    Err(e) => println!("Other error: {}", e),
-}
+```bash
+# Test stdio server
+echo '{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2024-11-05", "capabilities": {"tools": {}}, "clientInfo": {"name": "test", "version": "1.0"}}}' | cargo run --bin your_server
 ```
 
 ## Next Steps
 
-- **[Server Guide](guides/server.md)** - Learn about advanced server features
-- **[Client Guide](guides/client.md)** - Explore client capabilities
-- **[Transport Guide](guides/transports.md)** - Choose the right transport
-- **[Tools Guide](guides/tools.md)** - Create sophisticated tools
-- **[Examples](examples/basic.md)** - See more detailed examples
+- **Using the binary**: See [Binary Usage Guide](guides/binary.md)
+- **Building servers**: Read the [Server Guide](guides/server.md)
+- **Available tools**: Check [Built-in Tools](guides/tools.md)
+- **Client integration**: See [Client Examples](examples/basic.md)
 
-## Common Patterns
+## Troubleshooting
 
-### Request/Response Pattern
-```rust
-// Server responds to individual requests
-let result = client.tools().call_tool("my_tool", Some(args)).await?;
-```
+### Server won't start
+- Check if port 7331 is available
+- Try a different port: `glyph serve --address 127.0.0.1:8080`
 
-### Streaming Pattern
-```rust
-// For long-running operations with progress updates
-// (Implementation depends on your specific use case)
-```
+### Client can't connect
+- Verify server is running: `netstat -tlnp | grep 7331`
+- Check firewall settings
+- Try localhost instead of 127.0.0.1
 
-### Batch Operations
-```rust
-// Process multiple requests efficiently
-let tools = vec!["tool1", "tool2", "tool3"];
-let futures: Vec<_> = tools.iter()
-    .map(|name| client.tools().call_tool(*name, None))
-    .collect();
-
-let results = futures::future::join_all(futures).await;
-```
-
-That's it! You now have a working MCP server and client. Explore the other guides to learn about advanced features like authentication, observability, and integration with your existing systems.
+### Build errors
+- Ensure Rust 1.75+ is installed
+- Run `cargo update` to update dependencies
+- Check [troubleshooting guide](troubleshooting.md)

@@ -2,7 +2,7 @@ use crate::protocol::{
     Tool, CallToolRequest, CallToolResult, ListToolsRequest, ListToolsResult, RequestId,
 };
 use crate::client::{Connection, ResponseWaiter};
-use crate::{Result, JsonRpcMessage, JsonRpcRequest};
+use crate::{Result, protocol::{JsonRpcMessage, JsonRpcRequest}};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
@@ -76,7 +76,7 @@ impl ToolClient {
 
         Err(crate::protocol::GlyphError::JsonRpc(
             "Tool result cannot be deserialized to requested type".to_string()
-        ))
+        ).into())
     }
 
     async fn send_request<T, R>(&self, method: &str, params: Option<T>) -> Result<R>
@@ -114,8 +114,7 @@ impl ToolClient {
             .map_err(|_| crate::protocol::GlyphError::JsonRpc("Request cancelled".to_string()))??;
 
         // Deserialize response
-        serde_json::from_value(response_value)
-            .map_err(|e| crate::protocol::GlyphError::Serialization(e))
+        Ok(serde_json::from_value::<R>(response_value)?)
     }
 }
 

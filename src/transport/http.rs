@@ -1,5 +1,6 @@
 use async_trait::async_trait;
-use crate::protocol::{JsonRpcMessage, GlyphError, Result};
+use crate::protocol::{JsonRpcMessage};
+use crate::{Error, Result};
 use crate::transport::{Transport, TransportConfig};
 use reqwest::Client;
 use serde_json;
@@ -24,12 +25,12 @@ impl HttpTransport {
 
     pub fn with_config(url: &str, config: TransportConfig) -> Result<Self> {
         let url = Url::parse(url)
-            .map_err(|e| GlyphError::Transport(format!("Invalid URL: {}", e)))?;
+            .map_err(|e| Error::Transport(format!("Invalid URL: {}", e)))?;
 
         let client = Client::builder()
             .timeout(config.read_timeout.unwrap_or(std::time::Duration::from_secs(30)))
             .build()
-            .map_err(|e| GlyphError::Transport(format!("Failed to create HTTP client: {}", e)))?;
+            .map_err(|e| Error::Transport(format!("Failed to create HTTP client: {}", e)))?;
 
         let (sender, receiver) = mpsc::unbounded_channel();
 
@@ -45,7 +46,7 @@ impl HttpTransport {
 
     pub async fn start_sse_listener(&mut self) -> Result<()> {
         if self.is_closed() {
-            return Err(GlyphError::ConnectionClosed);
+            return Err(Error::ConnectionClosed.into());
         }
 
         let mut sse_url = self.url.clone();
@@ -118,14 +119,14 @@ impl HttpTransport {
 impl Transport for HttpTransport {
     async fn send(&mut self, message: JsonRpcMessage) -> Result<()> {
         if self.is_closed() {
-            return Err(GlyphError::ConnectionClosed);
+            return Err(Error::ConnectionClosed.into());
         }
 
         let json = serde_json::to_string(&message)?;
 
         if let Some(max_size) = self.config.max_message_size {
             if json.len() > max_size {
-                return Err(GlyphError::Transport(format!(
+                return Err(Error::Transport(format!(
                     "Message too large: {} bytes, max: {} bytes",
                     json.len(),
                     max_size
@@ -140,10 +141,10 @@ impl Transport for HttpTransport {
                 .body(json)
                 .send()
                 .await
-                .map_err(|e| GlyphError::Transport(format!("HTTP request failed: {}", e)))?;
+                .map_err(|e| Error::Transport(format!("HTTP request failed: {}", e)))?;
 
             if !response.status().is_success() {
-                return Err(GlyphError::Transport(format!(
+                return Err(Error::Transport(format!(
                     "HTTP request failed with status: {}",
                     response.status()
                 )));
@@ -151,12 +152,12 @@ impl Transport for HttpTransport {
 
             // For HTTP transport, we might receive a response immediately
             let response_text = response.text().await
-                .map_err(|e| GlyphError::Transport(format!("Failed to read response: {}", e)))?;
+                .map_err(|e| Error::Transport(format!("Failed to read response: {}", e)))?;
 
             if !response_text.is_empty() {
                 let response_message: JsonRpcMessage = serde_json::from_str(&response_text)?;
                 if self.sender.send(response_message).is_err() {
-                    return Err(GlyphError::ConnectionClosed);
+                    return Err(Error::ConnectionClosed);
                 }
             }
 
@@ -166,7 +167,7 @@ impl Transport for HttpTransport {
         if let Some(timeout) = self.config.write_timeout {
             tokio::time::timeout(timeout, send_future)
                 .await
-                .map_err(|_| GlyphError::Timeout)?
+                .map_err(|_| Error::Timeout("Send timeout".to_string()))?
         } else {
             send_future.await
         }
@@ -190,7 +191,7 @@ impl Transport for HttpTransport {
         if let Some(timeout) = self.config.read_timeout {
             tokio::time::timeout(timeout, receive_future)
                 .await
-                .map_err(|_| GlyphError::Timeout)?
+                .map_err(|_| Error::Timeout("Receive timeout".to_string()))?
         } else {
             receive_future.await
         }

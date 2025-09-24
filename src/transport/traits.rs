@@ -1,5 +1,6 @@
 use async_trait::async_trait;
-use crate::protocol::{JsonRpcMessage, GlyphError, Result};
+use crate::protocol::JsonRpcMessage;
+use crate::Result;
 use std::fmt::Debug;
 
 #[async_trait]

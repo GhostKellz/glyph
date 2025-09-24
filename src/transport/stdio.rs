@@ -1,5 +1,7 @@
 use async_trait::async_trait;
-use crate::protocol::{JsonRpcMessage, GlyphError, Result};
+use crate::protocol::JsonRpcMessage;
+use crate::Error;
+use crate::Result;
 use crate::transport::{Transport, TransportConfig};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
 use tokio::sync::Mutex;
@@ -41,7 +43,7 @@ impl Default for StdioTransport {
 impl Transport for StdioTransport {
     async fn send(&mut self, message: JsonRpcMessage) -> Result<()> {
         if self.is_closed() {
-            return Err(GlyphError::ConnectionClosed);
+            return Err(Error::ConnectionClosed);
         }
 
         let json = serde_json::to_string(&message)?;
@@ -52,13 +54,13 @@ impl Transport for StdioTransport {
             let mut writer = self.writer.lock().await;
             writer.write_all(line.as_bytes()).await?;
             writer.flush().await?;
-            Ok::<(), GlyphError>(())
+            Ok::<(), Error>(())
         };
 
         if let Some(timeout) = self.config.write_timeout {
             tokio::time::timeout(timeout, write_future)
                 .await
-                .map_err(|_| GlyphError::Timeout)?
+                .map_err(|_| Error::Timeout("Write timeout".to_string()))?
         } else {
             write_future.await
         }
@@ -87,7 +89,7 @@ impl Transport for StdioTransport {
 
                     if let Some(max_size) = self.config.max_message_size {
                         if trimmed.len() > max_size {
-                            return Err(GlyphError::Transport(format!(
+                            return Err(Error::Transport(format!(
                                 "Message too large: {} bytes, max: {} bytes",
                                 trimmed.len(),
                                 max_size
@@ -104,7 +106,7 @@ impl Transport for StdioTransport {
         if let Some(timeout) = self.config.read_timeout {
             tokio::time::timeout(timeout, read_future)
                 .await
-                .map_err(|_| GlyphError::Timeout)?
+                .map_err(|_| Error::Timeout("Read timeout".to_string()))?
         } else {
             read_future.await
         }

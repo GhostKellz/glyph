@@ -2,7 +2,7 @@ use glyph::client::Client;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::init();
+    tracing_subscriber::fmt::init();
 
     // This would connect to a WebSocket server in a real scenario
     // let client = Client::connect_ws("ws://localhost:7331").await?;

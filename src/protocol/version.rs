@@ -11,7 +11,7 @@ impl ProtocolVersion {
     pub const V_2025_06_18: Self = Self::new("2025-06-18");
     pub const LATEST: Self = Self::V_2025_03_26;
 
-    const fn new(version: &'static str) -> Self {
+    const fn new(_version: &'static str) -> Self {
         Self(String::new()) // Placeholder for const context
     }
 

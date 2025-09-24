@@ -1,11 +1,9 @@
 use crate::protocol::{
-    Resource, ResourceContents, ResourceTemplate, ReadResourceRequest, ReadResourceResult,
-    ListResourcesRequest, ListResourcesResult, McpError,
+    Resource, ResourceContents, ResourceTemplate, McpError,
 };
 use crate::Result;
 use async_trait::async_trait;
 use std::collections::HashMap;
-use serde_json::Value;
 
 #[async_trait]
 pub trait ResourceProvider: Send + Sync {
@@ -21,17 +19,16 @@ pub trait ResourceProvider: Send + Sync {
     async fn subscribe(&self, _uri: &str) -> Result<()> {
         Err(crate::protocol::GlyphError::JsonRpc(
             "Resource subscriptions not supported".to_string()
-        ))
+        ).into())
     }
 
     async fn unsubscribe(&self, _uri: &str) -> Result<()> {
         Err(crate::protocol::GlyphError::JsonRpc(
             "Resource subscriptions not supported".to_string()
-        ))
+        ).into())
     }
 }
 
-#[derive(Debug)]
 pub struct ResourceRegistry {
     providers: Vec<Box<dyn ResourceProvider>>,
     subscriptions: HashMap<String, Vec<String>>, // uri -> list of subscriber IDs
@@ -101,7 +98,7 @@ impl ResourceRegistry {
         if !success {
             return Err(crate::protocol::GlyphError::JsonRpc(
                 format!("No provider supports subscription to URI: {}", uri)
-            ));
+            ).into());
         }
 
         // Track subscription

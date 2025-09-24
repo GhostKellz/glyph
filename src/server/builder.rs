@@ -72,8 +72,8 @@ impl ServerBuilder {
         self
     }
 
-    pub fn build(self) -> Server {
-        let server_info = self.server_info.unwrap_or_else(|| {
+    pub fn build(&self) -> Server {
+        let server_info = self.server_info.clone().unwrap_or_else(|| {
             Implementation::new("glyph-server", env!("CARGO_PKG_VERSION"))
         });
 
@@ -83,7 +83,7 @@ impl ServerBuilder {
         let prompt_registry = PromptRegistry::new();
 
         Server::new(
-            self.capabilities,
+            self.capabilities.clone(),
             server_info,
             session_manager,
             tool_registry,
@@ -93,16 +93,16 @@ impl ServerBuilder {
     }
 
     // Convenience methods for common setups
-    pub fn for_stdio(self) -> ServerWithStdio {
+    pub fn for_stdio(&self) -> ServerWithStdio {
         ServerWithStdio {
             server: self.build(),
-            config: self.transport_config,
+            config: self.transport_config.clone(),
         }
     }
 
-    pub async fn for_websocket(self, addr: &str) -> Result<ServerWithWebSocket> {
+    pub async fn for_websocket(&self, addr: &str) -> Result<ServerWithWebSocket> {
         let server = self.build();
-        let ws_server = WebSocketServer::bind_with_config(addr, self.transport_config).await?;
+        let ws_server = WebSocketServer::bind_with_config(addr, self.transport_config.clone()).await?;
 
         Ok(ServerWithWebSocket {
             server,

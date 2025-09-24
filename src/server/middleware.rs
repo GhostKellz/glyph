@@ -26,7 +26,6 @@ pub trait Middleware: Send + Sync {
     ) -> Result<()>;
 }
 
-#[derive(Debug)]
 pub struct MiddlewareStack {
     middleware: Vec<Arc<dyn Middleware>>,
 }
@@ -99,12 +98,12 @@ impl Middleware for LoggingMiddleware {
     async fn after_request(
         &self,
         request: &JsonRpcRequest<serde_json::Value>,
-        response: &mut JsonRpcResponse<serde_json::Value>,
+        _response: &mut JsonRpcResponse<serde_json::Value>,
     ) -> Result<()> {
-        if response.is_success() {
+        if _response.is_success() {
             tracing::debug!("Request {} completed successfully", request.method);
         } else {
-            tracing::warn!("Request {} failed: {:?}", request.method, response.error);
+            tracing::warn!("Request {} failed: {:?}", request.method, _response.error);
         }
         Ok(())
     }
@@ -112,9 +111,9 @@ impl Middleware for LoggingMiddleware {
     async fn on_error(
         &self,
         request: &JsonRpcRequest<serde_json::Value>,
-        error: &McpError,
+        _error: &McpError,
     ) -> Result<()> {
-        tracing::error!("Request {} error: {}", request.method, error);
+        tracing::error!("Request {} error: {}", request.method, _error);
         Ok(())
     }
 }
@@ -127,7 +126,7 @@ impl Middleware for TimingMiddleware {
         &self,
         request: &mut JsonRpcRequest<serde_json::Value>,
     ) -> Result<()> {
-        let start_time = std::time::Instant::now();
+        let _start_time = std::time::Instant::now();
         // In a real implementation, we'd store this in request context
         tracing::debug!("Request {} started", request.method);
         Ok(())
@@ -136,7 +135,7 @@ impl Middleware for TimingMiddleware {
     async fn after_request(
         &self,
         request: &JsonRpcRequest<serde_json::Value>,
-        response: &mut JsonRpcResponse<serde_json::Value>,
+        _response: &mut JsonRpcResponse<serde_json::Value>,
     ) -> Result<()> {
         // In a real implementation, we'd calculate duration from stored start time
         tracing::debug!("Request {} completed", request.method);
@@ -146,7 +145,7 @@ impl Middleware for TimingMiddleware {
     async fn on_error(
         &self,
         request: &JsonRpcRequest<serde_json::Value>,
-        error: &McpError,
+        _error: &McpError,
     ) -> Result<()> {
         tracing::debug!("Request {} failed", request.method);
         Ok(())
