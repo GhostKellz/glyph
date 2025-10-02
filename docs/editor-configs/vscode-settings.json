@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "glyph": {
+      "command": "glyph",
+      "args": ["serve", "--transport", "stdio"],
+      "env": {
+        "RUST_LOG": "info"
+      }
+    },
+    "glyph-custom": {
+      "command": "/path/to/your/custom-server",
+      "args": ["serve", "--transport", "stdio"],
+      "env": {
+        "RUST_LOG": "debug"
+      }
+    },
+    "glyph-websocket": {
+      "command": "glyph",
+      "args": ["serve", "--address", "127.0.0.1:7331"],
+      "env": {
+        "RUST_LOG": "info"
+      }
+    }
+  }
+}

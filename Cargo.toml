@@ -1,10 +1,18 @@
 [package]
 name = "glyph"
 version = "0.1.0"
-edition = "2024"
-description = "Enterprise-grade Rust library for Model Context Protocol (MCP)"
+edition = "2021"
+rust-version = "1.75"
+authors = ["Ghost Kellz <noreply@ghostkellz.dev>"]
+description = "Enterprise-grade Rust library and server for Model Context Protocol (MCP)"
 license = "MIT"
 repository = "https://github.com/ghostkellz/glyph"
+homepage = "https://github.com/ghostkellz/glyph"
+documentation = "https://github.com/ghostkellz/glyph/tree/main/docs"
+readme = "README.md"
+keywords = ["mcp", "model-context-protocol", "ai", "llm", "tools"]
+categories = ["asynchronous", "web-programming", "api-bindings", "development-tools"]
+exclude = ["archive/", ".github/", "assets/"]
 
 [lib]
 name = "glyph"
@@ -47,6 +55,9 @@ anyhow = "1.0"
 
 # Schema validation
 jsonschema = "0.18"
+
+# Observability
+chrono = { version = "0.4", features = ["serde"] }
 
 # CLI parsing
 clap = { version = "4.0", features = ["derive"] }

@@ -5,10 +5,12 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 #[derive(serde::Deserialize)]
+#[allow(dead_code)]
 struct ReadFileInput {
     path: String
 }
 
+#[allow(dead_code)]
 struct ReadFile;
 
 #[async_trait]
@@ -56,6 +58,7 @@ impl Tool for ReadFile {
     }
 }
 
+#[allow(dead_code)]
 struct EchoTool;
 
 #[async_trait]

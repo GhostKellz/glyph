@@ -130,7 +130,6 @@ impl Transport for StdioTransport {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::protocol::{JsonRpcRequest, JsonRpcVersion2_0, RequestId};
 
     #[tokio::test]
     async fn test_stdio_transport_creation() {

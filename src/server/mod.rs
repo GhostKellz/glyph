@@ -6,6 +6,9 @@ pub mod tools;
 pub mod resources;
 pub mod prompts;
 pub mod middleware;
+pub mod policy;
+pub mod observability;
+pub mod security;
 
 pub use builder::*;
 pub use core::*;
@@ -15,3 +18,6 @@ pub use tools::*;
 pub use resources::*;
 pub use prompts::*;
 pub use middleware::*;
+pub use policy::*;
+pub use observability::*;
+pub use security::*;

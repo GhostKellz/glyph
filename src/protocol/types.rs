@@ -229,14 +229,6 @@ pub struct Notification<T> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProgressNotification {
-    #[serde(rename = "progressToken")]
-    pub progress_token: RequestId,
-    pub progress: u32,
-    pub total: Option<u32>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceSubscription {
     pub uri: String,
 }

@@ -8,6 +8,6 @@ pub mod version;
 pub use types::*;
 pub use error::*;
 pub use jsonrpc::*;
-pub use messages::*;
+pub use messages::{*, ProgressNotification};
 pub use capabilities::*;
 pub use version::*;

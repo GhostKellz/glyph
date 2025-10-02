@@ -340,7 +340,6 @@ impl ResourceProvider for MemoryResourceProvider {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
 
     #[tokio::test]
     async fn test_resource_registry() {

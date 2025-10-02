@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "glyph": {
+      "command": "glyph",
+      "args": ["serve", "--transport", "stdio"]
+    },
+    "glyph-integration-example": {
+      "command": "cargo",
+      "args": [
+        "run",
+        "--release",
+        "--manifest-path",
+        "/path/to/glyph/examples/integration_example/Cargo.toml"
+      ],
+      "env": {
+        "TRANSPORT": "stdio",
+        "RUST_LOG": "info"
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+/data/projects/glyph/examples/integration_example/target/x86_64-unknown-linux-gnu/release/deps/libglyph-e085e01ab7e26988.rmeta: /data/projects/glyph/src/lib.rs /data/projects/glyph/src/client/mod.rs /data/projects/glyph/src/client/core.rs /data/projects/glyph/src/client/builder.rs /data/projects/glyph/src/client/connection.rs /data/projects/glyph/src/client/tools.rs /data/projects/glyph/src/client/resources.rs /data/projects/glyph/src/client/prompts.rs /data/projects/glyph/src/error.rs /data/projects/glyph/src/ffi.rs /data/projects/glyph/src/protocol/mod.rs /data/projects/glyph/src/protocol/types.rs /data/projects/glyph/src/protocol/error.rs /data/projects/glyph/src/protocol/jsonrpc.rs /data/projects/glyph/src/protocol/messages.rs /data/projects/glyph/src/protocol/capabilities.rs /data/projects/glyph/src/protocol/version.rs /data/projects/glyph/src/server/mod.rs /data/projects/glyph/src/server/builder.rs /data/projects/glyph/src/server/core.rs /data/projects/glyph/src/server/handler.rs /data/projects/glyph/src/server/session.rs /data/projects/glyph/src/server/tools.rs /data/projects/glyph/src/server/resources.rs /data/projects/glyph/src/server/prompts.rs /data/projects/glyph/src/server/middleware.rs /data/projects/glyph/src/transport/mod.rs /data/projects/glyph/src/transport/stdio.rs /data/projects/glyph/src/transport/websocket.rs /data/projects/glyph/src/transport/http.rs /data/projects/glyph/src/transport/traits.rs
+
+/data/projects/glyph/examples/integration_example/target/x86_64-unknown-linux-gnu/release/deps/libglyph-e085e01ab7e26988.rlib: /data/projects/glyph/src/lib.rs /data/projects/glyph/src/client/mod.rs /data/projects/glyph/src/client/core.rs /data/projects/glyph/src/client/builder.rs /data/projects/glyph/src/client/connection.rs /data/projects/glyph/src/client/tools.rs /data/projects/glyph/src/client/resources.rs /data/projects/glyph/src/client/prompts.rs /data/projects/glyph/src/error.rs /data/projects/glyph/src/ffi.rs /data/projects/glyph/src/protocol/mod.rs /data/projects/glyph/src/protocol/types.rs /data/projects/glyph/src/protocol/error.rs /data/projects/glyph/src/protocol/jsonrpc.rs /data/projects/glyph/src/protocol/messages.rs /data/projects/glyph/src/protocol/capabilities.rs /data/projects/glyph/src/protocol/version.rs /data/projects/glyph/src/server/mod.rs /data/projects/glyph/src/server/builder.rs /data/projects/glyph/src/server/core.rs /data/projects/glyph/src/server/handler.rs /data/projects/glyph/src/server/session.rs /data/projects/glyph/src/server/tools.rs /data/projects/glyph/src/server/resources.rs /data/projects/glyph/src/server/prompts.rs /data/projects/glyph/src/server/middleware.rs /data/projects/glyph/src/transport/mod.rs /data/projects/glyph/src/transport/stdio.rs /data/projects/glyph/src/transport/websocket.rs /data/projects/glyph/src/transport/http.rs /data/projects/glyph/src/transport/traits.rs
+
+/data/projects/glyph/examples/integration_example/target/x86_64-unknown-linux-gnu/release/deps/glyph-e085e01ab7e26988.d: /data/projects/glyph/src/lib.rs /data/projects/glyph/src/client/mod.rs /data/projects/glyph/src/client/core.rs /data/projects/glyph/src/client/builder.rs /data/projects/glyph/src/client/connection.rs /data/projects/glyph/src/client/tools.rs /data/projects/glyph/src/client/resources.rs /data/projects/glyph/src/client/prompts.rs /data/projects/glyph/src/error.rs /data/projects/glyph/src/ffi.rs /data/projects/glyph/src/protocol/mod.rs /data/projects/glyph/src/protocol/types.rs /data/projects/glyph/src/protocol/error.rs /data/projects/glyph/src/protocol/jsonrpc.rs /data/projects/glyph/src/protocol/messages.rs /data/projects/glyph/src/protocol/capabilities.rs /data/projects/glyph/src/protocol/version.rs /data/projects/glyph/src/server/mod.rs /data/projects/glyph/src/server/builder.rs /data/projects/glyph/src/server/core.rs /data/projects/glyph/src/server/handler.rs /data/projects/glyph/src/server/session.rs /data/projects/glyph/src/server/tools.rs /data/projects/glyph/src/server/resources.rs /data/projects/glyph/src/server/prompts.rs /data/projects/glyph/src/server/middleware.rs /data/projects/glyph/src/transport/mod.rs /data/projects/glyph/src/transport/stdio.rs /data/projects/glyph/src/transport/websocket.rs /data/projects/glyph/src/transport/http.rs /data/projects/glyph/src/transport/traits.rs
+
+/data/projects/glyph/src/lib.rs:
+/data/projects/glyph/src/client/mod.rs:
+/data/projects/glyph/src/client/core.rs:
+/data/projects/glyph/src/client/builder.rs:
+/data/projects/glyph/src/client/connection.rs:
+/data/projects/glyph/src/client/tools.rs:
+/data/projects/glyph/src/client/resources.rs:
+/data/projects/glyph/src/client/prompts.rs:
+/data/projects/glyph/src/error.rs:
+/data/projects/glyph/src/ffi.rs:
+/data/projects/glyph/src/protocol/mod.rs:
+/data/projects/glyph/src/protocol/types.rs:
+/data/projects/glyph/src/protocol/error.rs:
+/data/projects/glyph/src/protocol/jsonrpc.rs:
+/data/projects/glyph/src/protocol/messages.rs:
+/data/projects/glyph/src/protocol/capabilities.rs:
+/data/projects/glyph/src/protocol/version.rs:
+/data/projects/glyph/src/server/mod.rs:
+/data/projects/glyph/src/server/builder.rs:
+/data/projects/glyph/src/server/core.rs:
+/data/projects/glyph/src/server/handler.rs:
+/data/projects/glyph/src/server/session.rs:
+/data/projects/glyph/src/server/tools.rs:
+/data/projects/glyph/src/server/resources.rs:
+/data/projects/glyph/src/server/prompts.rs:
+/data/projects/glyph/src/server/middleware.rs:
+/data/projects/glyph/src/transport/mod.rs:
+/data/projects/glyph/src/transport/stdio.rs:
+/data/projects/glyph/src/transport/websocket.rs:
+/data/projects/glyph/src/transport/http.rs:
+/data/projects/glyph/src/transport/traits.rs:
+
+# env-dep:CARGO_PKG_VERSION=0.1.0

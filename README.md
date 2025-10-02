@@ -13,13 +13,8 @@
   ![Observability](https://img.shields.io/badge/Monitoring-Tracing%20%2B%20Metrics-purple)
   ![Schema First](https://img.shields.io/badge/API-Schema%20First-yellow)
   ![FFI Ready](https://img.shields.io/badge/Interop-FFI%20Ready-lightgrey)
+  ![Rust 1.75+](https://img.shields.io/badge/rust-1.75%2B-orange.svg)
 </div>
-
-## DISCLAIMER
-
-⚠️ **EXPERIMENTAL LIBRARY - FOR LAB/PERSONAL USE** ⚠️
-
-This is an experimental library under active development. It is intended for research, learning, and personal projects. The API is subject to change!
 
 **Glyph** is the Rust backbone for MCP in your stack—**server + client + transports + schemas**—built for high throughput and deep observability. Ideal for **GhostLLM**, **GhostFlow**, **Jarvis**, and service backends.
 
@@ -29,6 +24,16 @@ This is an experimental library under active development. It is intended for res
 - 📜 **OpenAPI/JSON-Schema**: first-class tool and resource schemas
 - 📈 **Prod-ready**: tokio, tracing, metrics, robust error model
 - 🔗 **Interop**: clean FFI surface for Zig (Rune) and other languages
+
+---
+
+## 📚 Documentation
+
+- **[Installation Guide](docs/installation.md)** - Binary, crate, and Docker setup
+- **[Quick Start](docs/quickstart.md)** - Get running in 5 minutes
+- **[Server Binary Guide](docs/guides/binary.md)** - CLI usage and configuration
+- **[Architecture](docs/architecture.md)** - Design overview and internals
+- **[Full Documentation](docs/README.md)** - Complete guides and API reference
 
 ---
 

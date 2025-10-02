@@ -218,7 +218,6 @@ impl TransportServer for WebSocketServer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::protocol::{JsonRpcRequest, JsonRpcVersion2_0, RequestId};
 
     #[tokio::test]
     async fn test_websocket_server_creation() -> Result<()> {
